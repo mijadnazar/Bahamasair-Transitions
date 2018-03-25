@@ -41,7 +41,7 @@ class ViewController: UIViewController {
   @IBOutlet var cloud3: UIImageView!
   @IBOutlet var cloud4: UIImageView!
 
-  // MARK: further UI
+    // MARK: further UI
 
   let spinner = UIActivityIndicatorView(activityIndicatorStyle: .whiteLarge)
   let status = UIImageView(image: UIImage(named: "banner"))
@@ -51,6 +51,7 @@ class ViewController: UIViewController {
   var statusPosition = CGPoint.zero
 
   var animationContainerView: UIView!
+    var newView: UIView!
 
   // MARK: view controller methods
 
@@ -77,9 +78,10 @@ class ViewController: UIViewController {
     label.textAlignment = .center
     status.addSubview(label)
 
-    animationContainerView = UIView(frame: self.view.bounds)
-    animationContainerView.frame = self.view.bounds
-    self.view.addSubview(animationContainerView)
+    statusPosition = status.center
+//    animationContainerView = UIView(frame: self.view.bounds)
+//    animationContainerView.frame = self.view.bounds
+//    self.view.addSubview(animationContainerView)
   }
 
   override func viewWillAppear(_ animated: Bool) {
@@ -133,14 +135,10 @@ class ViewController: UIViewController {
                     self.loginButton.alpha = 1.0
     }, completion: nil)
 
-    //create new view
-    let newView = UIImageView(image: UIImage(named: "banner"))
-    newView.center = animationContainerView.center
-
-    UIView.transition(with: animationContainerView, duration: 0.33, options: [.curveEaseOut, .transitionFlipFromBottom], animations: {
-        self.animationContainerView.addSubview(newView)
-    }, completion: nil)
-
+    self.animateCloud(cloud: cloud1)
+    self.animateCloud(cloud: cloud2)
+    self.animateCloud(cloud: cloud3)
+    self.animateCloud(cloud: cloud4)
   }
 
   // MARK: further methods
@@ -148,9 +146,11 @@ class ViewController: UIViewController {
   @IBAction func login() {
     view.endEditing(true)
 
-    UIView.animate(withDuration: 1.5, delay: 0.0, usingSpringWithDamping: 0.2, initialSpringVelocity: 0.0, options: [], animations: {
+    UIView.animate(withDuration: 0.5, delay: 0.0, usingSpringWithDamping: 0.2, initialSpringVelocity: 0.0, options: [], animations: {
         self.loginButton.bounds.size.width += 80.0
-    }, completion: nil)
+    }, completion: {_ in
+        self.showMessage(index: 0)
+    })
 
     UIView.animate(withDuration: 0.33, delay: 0.0, usingSpringWithDamping: 0.7, initialSpringVelocity: 0.0, options: [], animations: {
         self.loginButton.center.y += 60.0
@@ -161,9 +161,8 @@ class ViewController: UIViewController {
         )
         self.spinner.alpha = 1.0
     }, completion: {_ in
-        self.showMessage(index: 0)
+//        self.showMessage(index: 0)
     })
-
   }
 
     func showMessage(index: Int) {
@@ -172,9 +171,58 @@ class ViewController: UIViewController {
                           options: [.curveEaseOut, .transitionCurlDown],
                           animations: {
                             self.status.isHidden = false
-        },
-                          completion: {_ in
+        }, completion: {_ in
+            delay(2, completion: {
+                if index < self.messages.count - 1 {
+                    self.removeMessage(index: index)
+                }else {
+                    // reset form
+                    self.resetForm()
+                }
+            })
         })
+    }
+
+    func removeMessage(index: Int) {
+        UIView.animate(withDuration: 0.33, delay: 0.0, options: [], animations: {
+            self.status.center.x += self.view.frame.size.width
+        }, completion: {_ in
+            self.status.isHidden = true
+            self.status.center = self.statusPosition
+
+            self.showMessage(index: index + 1)
+        })
+    }
+
+    func resetForm() {
+        UIView.transition(with: self.status, duration: 0.2, options: [.curveEaseOut, .transitionFlipFromTop], animations: {
+            self.status.isHidden = true
+            self.status.center = self.statusPosition
+        }, completion: nil)
+
+        UIView.animate(withDuration: 0.2, delay: 0.0, options: [.curveEaseOut], animations: {
+            let newPosition = CGPoint(x: -20, y: 16)
+            self.spinner.center = newPosition
+            self.spinner.alpha = 0
+            self.loginButton.backgroundColor = UIColor(red: 0.63, green: 0.84, blue: 0.35, alpha: 1.0)
+            self.loginButton.bounds.size.width -= 80
+            self.loginButton.center.y -= 60
+        }, completion: nil)
+    }
+
+    func animateCloud(cloud: UIImageView) {
+        let cloudSpeed = 60 / self.view.frame.size.width
+        let duration = (self.view.frame.size.width - cloud.frame.origin.x) * cloudSpeed
+
+        UIView.animate(withDuration: TimeInterval(duration), delay: 0, options: [.curveLinear], animations: {
+//            let frame = CGRect(x: cloud.frame.origin.x, y: cloud.frame.origin.y
+//                , width: self.view.frame.size.width, height: cloud.frame.size.height)
+            cloud.frame.origin.x = self.view.frame.size.width
+//            cloud.frame = frame
+        }) { _ in
+            cloud.frame.origin.x = -cloud.frame.size.width
+            self.animateCloud(cloud: cloud)
+        }
     }
 
   // MARK: UITextFieldDelegate
